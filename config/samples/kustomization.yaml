@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- clustersecret_v1_clustersecret.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
