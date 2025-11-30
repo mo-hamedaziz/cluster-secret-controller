@@ -30,9 +30,13 @@ type ClusterSecretSpec struct {
 	// The following markers will use OpenAPI v3 schema to validate the value
 	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
-	// foo is an example field of ClusterSecret. Edit clustersecret_types.go to remove/update
-	// +optional
-	Foo *string `json:"foo,omitempty"`
+	// MatchNamespace patterns to include (supports wildcards like prefix-*)
+    // +kubebuilder:validation:MinItems=1
+    MatchNamespace []string `json:"matchNamespace"`
+
+    // Data contains the secret data
+    // +optional
+    Data map[string][]byte `json:"data,omitempty"`
 }
 
 // ClusterSecretStatus defines the observed state of ClusterSecret.
