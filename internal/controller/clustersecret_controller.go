@@ -299,7 +299,8 @@ func (r *ClusterSecretReconciler) namespaceToClusterSecrets(ctx context.Context,
 	for i, cs := range clusterSecrets.Items {
 		requests[i] = reconcile.Request{
 			NamespacedName: types.NamespacedName{
-				Name: cs.Name,
+				Name:      cs.Name,
+				Namespace: cs.Namespace,
 			},
 		}
 	}
