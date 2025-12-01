@@ -37,8 +37,8 @@ import (
 )
 
 const (
-	clusterSecretFinalizer = "clustersecret.io/finalizer"
-	ownerLabel             = "clustersecret.io/owned-by"
+	clusterSecretFinalizer = "clustersecret.pocteo.com/finalizer"
+	ownerLabel             = "clustersecret.pocteo.com/owned-by"
 )
 
 // ClusterSecretReconciler reconciles a ClusterSecret object
