@@ -65,14 +65,6 @@ type ClusterSecretStatus struct {
 	// +listMapKey=type
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
-
-	// SyncedNamespaces tracks which namespaces have the secret
-	// +optional
-	SyncedNamespaces []string `json:"syncedNamespaces,omitempty"`
-
-	// TotalSynced is the count of synced secrets
-	// +optional
-	TotalSynced int `json:"totalSynced,omitempty"`
 }
 
 // +kubebuilder:object:root=true

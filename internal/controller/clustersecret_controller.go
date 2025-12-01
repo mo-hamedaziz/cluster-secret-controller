@@ -111,8 +111,6 @@ func (r *ClusterSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	// Update status
-	clusterSecret.Status.SyncedNamespaces = syncedNamespaces
-	clusterSecret.Status.TotalSynced = len(syncedNamespaces)
 	clusterSecret.Status.Conditions = []metav1.Condition{
 		{
 			Type:               "Synced",
