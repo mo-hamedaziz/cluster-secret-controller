@@ -37,8 +37,8 @@ import (
 )
 
 const (
-	clusterSecretFinalizer = "clustersecret.pocteo.com/finalizer"
-	ownerLabel             = "clustersecret.pocteo.com/owned-by"
+	clusterSecretFinalizer = "clustersecret.pocteo.com/finalizer" // A finalizer to prevent deletion until cleanup is done
+	ownerLabel             = "clustersecret.pocteo.com/owned-by" // Label to mark secrets owned by a ClusterSecret
 )
 
 // ClusterSecretReconciler reconciles a ClusterSecret object
@@ -67,7 +67,7 @@ func (r *ClusterSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	clusterSecret := &clustersecretv1.ClusterSecret{}
 	if err := r.Get(ctx, req.NamespacedName, clusterSecret); err != nil {
 		if apierrors.IsNotFound(err) {
-			return ctrl.Result{}, nil
+			return ctrl.Result{}, nil // If the ClusterSecret CR is not found, do nothing
 		}
 		return ctrl.Result{}, err
 	}
@@ -78,6 +78,7 @@ func (r *ClusterSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	// Add finalizer if not present
+	// This will ensure cleanup runs before the resource is deleted
 	if !controllerutil.ContainsFinalizer(clusterSecret, clusterSecretFinalizer) {
 		controllerutil.AddFinalizer(clusterSecret, clusterSecretFinalizer)
 		if err := r.Update(ctx, clusterSecret); err != nil {
@@ -95,7 +96,7 @@ func (r *ClusterSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// Filter namespaces based on match patterns
 	targetNamespaces := r.filterNamespaces(namespaceList.Items, clusterSecret.Spec.MatchNamespace)
 
-	// Sync secrets to target namespaces
+	// Sync secrets to target namespaces => This will create or update a Secret in each targeted namespace
 	syncedNamespaces := []string{}
 	for _, ns := range targetNamespaces {
 		if err := r.syncSecretToNamespace(ctx, clusterSecret, ns); err != nil {
