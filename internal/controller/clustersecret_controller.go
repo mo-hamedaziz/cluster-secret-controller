@@ -205,9 +205,6 @@ func (r *ClusterSecretReconciler) syncSecretToNamespace(ctx context.Context, clu
 	for k, v := range clusterSecret.Spec.Data {
 		secretData[k] = v
 	}
-	for k, v := range clusterSecret.Spec.StringData {
-		secretData[k] = []byte(v)
-	}
 
 	// Create or update secret
 	secret := &corev1.Secret{

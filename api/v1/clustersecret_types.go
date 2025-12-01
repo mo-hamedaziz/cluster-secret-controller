@@ -38,10 +38,6 @@ type ClusterSecretSpec struct {
 	// +optional
 	Data map[string][]byte `json:"data,omitempty"`
 
-	// StringData allows specifying non-binary secret data in string form
-	// +optional
-	StringData map[string]string `json:"stringData,omitempty"`
-
 	// Type of secret (Opaque, kubernetes.io/tls, etc.)
 	// +optional
 	// +kubebuilder:default=Opaque
