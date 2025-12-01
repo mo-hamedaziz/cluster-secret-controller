@@ -31,12 +31,21 @@ type ClusterSecretSpec struct {
 	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 
 	// MatchNamespace patterns to include (supports wildcards like prefix-*)
-    // +kubebuilder:validation:MinItems=1
-    MatchNamespace []string `json:"matchNamespace"`
+	// +kubebuilder:validation:MinItems=1
+	MatchNamespace []string `json:"matchNamespace"`
 
-    // Data contains the secret data
-    // +optional
-    Data map[string][]byte `json:"data,omitempty"`
+	// Data contains the secret data
+	// +optional
+	Data map[string][]byte `json:"data,omitempty"`
+
+	// StringData allows specifying non-binary secret data in string form
+	// +optional
+	StringData map[string]string `json:"stringData,omitempty"`
+
+	// Type of secret (Opaque, kubernetes.io/tls, etc.)
+	// +optional
+	// +kubebuilder:default=Opaque
+	Type string `json:"type,omitempty"`
 }
 
 // ClusterSecretStatus defines the observed state of ClusterSecret.
@@ -60,6 +69,14 @@ type ClusterSecretStatus struct {
 	// +listMapKey=type
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// SyncedNamespaces tracks which namespaces have the secret
+	// +optional
+	SyncedNamespaces []string `json:"syncedNamespaces,omitempty"`
+
+	// TotalSynced is the count of synced secrets
+	// +optional
+	TotalSynced int `json:"totalSynced,omitempty"`
 }
 
 // +kubebuilder:object:root=true
