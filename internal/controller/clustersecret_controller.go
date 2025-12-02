@@ -74,7 +74,7 @@ func (r *ClusterSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	// Handle deletion
 	if !clusterSecret.DeletionTimestamp.IsZero() {
-		return r.handleDeletion(ctx, clusterSecret)
+		return r.handleClusterSecretDeletion(ctx, clusterSecret)
 	}
 
 	// Add finalizer if not present
@@ -99,15 +99,15 @@ func (r *ClusterSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	// Sync secrets to target namespaces => This will create or update a Secret in each targeted namespace
 	syncedNamespaces := []string{}
 	for _, ns := range targetNamespaces {
-		if err := r.syncSecretToNamespace(ctx, clusterSecret, ns); err != nil {
-			logger.Error(err, "Failed to sync secret to namespace", "namespace", ns)
+		if err := r.createOrUpdateSecretInMatchedNamespaces(ctx, clusterSecret, ns); err != nil {
+			logger.Error(err, "Failed to create/update secret in namespace", "namespace", ns)
 			continue
 		}
 		syncedNamespaces = append(syncedNamespaces, ns)
 	}
 
 	// Clean up secrets in non-matching namespaces
-	if err := r.cleanupOrphanedSecrets(ctx, clusterSecret, targetNamespaces); err != nil {
+	if err := r.deleteSecretsFromNonMatchedNamespaces(ctx, clusterSecret, targetNamespaces); err != nil {
 		logger.Error(err, "Failed to cleanup orphaned secrets")
 	}
 
@@ -131,7 +131,8 @@ func (r *ClusterSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 }
 
-func (r *ClusterSecretReconciler) handleDeletion(ctx context.Context, clusterSecret *clustersecretv1.ClusterSecret) (ctrl.Result, error) {
+// Cascading delete: when a ClusterSecret is deleted, remove all Secrets it created
+func (r *ClusterSecretReconciler) handleClusterSecretDeletion(ctx context.Context, clusterSecret *clustersecretv1.ClusterSecret) (ctrl.Result, error) {
 	logger := logf.FromContext(ctx)
 
 	if controllerutil.ContainsFinalizer(clusterSecret, clusterSecretFinalizer) {
@@ -196,22 +197,22 @@ func wildcardToRegex(pattern string) string {
 	return pattern
 }
 
-func (r *ClusterSecretReconciler) syncSecretToNamespace(ctx context.Context, clusterSecret *clustersecretv1.ClusterSecret, namespace string) error {
+func (r *ClusterSecretReconciler) createOrUpdateSecretInMatchedNamespaces(ctx context.Context, clusterSecret *clustersecretv1.ClusterSecret, namespace string) error {
 	logger := logf.FromContext(ctx)
 
 	// Prepare secret data
-	secretData := make(map[string][]byte)
+	secretData := make(map[string][]byte) // Empty map
 	for k, v := range clusterSecret.Spec.Data {
 		secretData[k] = v
 	}
 
-	// Create or update secret
+	// Build the secret object
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterSecret.Name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				ownerLabel: clusterSecret.Name,
+				ownerLabel: clusterSecret.Name, // clustersecret.pocteo.com/owned-by: <ClusterSecret Name>
 			},
 		},
 		Data: secretData,
@@ -222,6 +223,7 @@ func (r *ClusterSecretReconciler) syncSecretToNamespace(ctx context.Context, clu
 	existing := &corev1.Secret{}
 	err := r.Get(ctx, types.NamespacedName{Name: secret.Name, Namespace: namespace}, existing)
 
+	// If not found, create it
 	if err != nil && apierrors.IsNotFound(err) {
 		// Create new secret
 		logger.Info("Creating secret", "namespace", namespace, "name", secret.Name)
@@ -242,7 +244,7 @@ func (r *ClusterSecretReconciler) syncSecretToNamespace(ctx context.Context, clu
 	return r.Update(ctx, existing)
 }
 
-func (r *ClusterSecretReconciler) cleanupOrphanedSecrets(ctx context.Context, clusterSecret *clustersecretv1.ClusterSecret, targetNamespaces []string) error {
+func (r *ClusterSecretReconciler) deleteSecretsFromNonMatchedNamespaces(ctx context.Context, clusterSecret *clustersecretv1.ClusterSecret, targetNamespaces []string) error {
 	logger := logf.FromContext(ctx)
 
 	// Get all secrets owned by this ClusterSecret
@@ -253,7 +255,7 @@ func (r *ClusterSecretReconciler) cleanupOrphanedSecrets(ctx context.Context, cl
 		return err
 	}
 
-	// Create a map of target namespaces for quick lookup
+	// Create a map of target namespaces (for quicker lookup)
 	targetNsMap := make(map[string]bool)
 	for _, ns := range targetNamespaces {
 		targetNsMap[ns] = true
