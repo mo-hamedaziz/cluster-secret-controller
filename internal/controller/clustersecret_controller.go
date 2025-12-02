@@ -38,7 +38,7 @@ import (
 
 const (
 	clusterSecretFinalizer = "clustersecret.pocteo.com/finalizer" // A finalizer to prevent deletion until cleanup is done
-	ownerLabel             = "clustersecret.pocteo.com/owned-by" // Label to mark secrets owned by a ClusterSecret
+	ownerLabel             = "clustersecret.pocteo.com/owned-by"  // Label to mark secrets owned by a ClusterSecret
 )
 
 // ClusterSecretReconciler reconciles a ClusterSecret object
@@ -94,7 +94,7 @@ func (r *ClusterSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	// Filter namespaces based on match patterns
-	targetNamespaces := r.filterNamespaces(namespaceList.Items, clusterSecret.Spec.MatchNamespace)
+	targetNamespaces := r.filterNamespaces(namespaceList.Items, clusterSecret.MatchNamespace)
 
 	// Sync secrets to target namespaces => This will create or update a Secret in each targeted namespace
 	syncedNamespaces := []string{}
@@ -202,7 +202,7 @@ func (r *ClusterSecretReconciler) createOrUpdateSecretInMatchedNamespaces(ctx co
 
 	// Prepare secret data
 	secretData := make(map[string][]byte) // Empty map
-	for k, v := range clusterSecret.Spec.Data {
+	for k, v := range clusterSecret.Data {
 		secretData[k] = v
 	}
 
@@ -216,7 +216,7 @@ func (r *ClusterSecretReconciler) createOrUpdateSecretInMatchedNamespaces(ctx co
 			},
 		},
 		Data: secretData,
-		Type: corev1.SecretType(clusterSecret.Spec.Type),
+		Type: corev1.SecretType(clusterSecret.Type),
 	}
 
 	// Check if secret exists

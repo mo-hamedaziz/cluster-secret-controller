@@ -80,9 +80,20 @@ type ClusterSecret struct {
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitzero"`
 
-	// spec defines the desired state of ClusterSecret
-	// +required
-	Spec ClusterSecretSpec `json:"spec"`
+	// Namespaces to watch (using prefix-*)
+	// +kubebuilder:validation:MinItems=1
+	MatchNamespace []string `json:"matchNamespace"`
+
+	// Type of secret (Opaque, kubernetes.io/tls, etc.)
+	// +optional
+	// +kubebuilder:default=Opaque
+	// It mirrors corev1.Secret.type
+	Type string `json:"type,omitempty"`
+
+	// Secret data
+	// +optional
+	// It mirrors corev1.Secret.data
+	Data map[string][]byte `json:"data,omitempty"`
 
 	// status defines the observed state of ClusterSecret
 	// +optional

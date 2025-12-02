@@ -30,7 +30,27 @@ func (in *ClusterSecret) DeepCopyInto(out *ClusterSecret) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
-	in.Spec.DeepCopyInto(&out.Spec)
+	if in.MatchNamespace != nil {
+		in, out := &in.MatchNamespace, &out.MatchNamespace
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.Data != nil {
+		in, out := &in.Data, &out.Data
+		*out = make(map[string][]byte, len(*in))
+		for key, val := range *in {
+			var outVal []byte
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				inVal := (*in)[key]
+				in, out := &inVal, &outVal
+				*out = make([]byte, len(*in))
+				copy(*out, *in)
+			}
+			(*out)[key] = outVal
+		}
+	}
 	in.Status.DeepCopyInto(&out.Status)
 }
 
